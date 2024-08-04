@@ -34,4 +34,28 @@ jobs:
         run: go mod tidy && go mod download
 
       - name: Run tests
-        run: go test -v ./...
+        run: |
+          start_time=$(date +%s)
+          go test -v ./...
+          end_time=$(date +%s)
+          echo "build_duration=$((end_time - start_time))"
+          echo "build_duration=$((end_time - start_time))" >> $GITHUB_ENV
+
+      - name: Send metrics to Grafana Cloud
+        run: |
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -u "${{ secrets.GRAFANA_CLOUD_USERNAME }}:${{ secrets.GRAFANA_CLOUD_PASSWORD }}" \
+          -d '{
+                "metrics": [
+                  {
+                    "name": "ci_build_duration_seconds",
+                    "value": "${{ env.build_duration }}",
+                    "labels": {
+                      "project": "${{ github.repository }}",
+                      "branch": "${{ github.ref_name }}"
+                    }
+                  }
+                ]
+              }' \
+          ${{ secrets.GRAFANA_CLOUD_PROMETHEUS_URL }}/api/prom/push
