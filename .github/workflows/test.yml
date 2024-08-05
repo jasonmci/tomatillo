@@ -44,18 +44,17 @@ jobs:
       - name: Send metrics to Grafana Cloud
         run: |
           curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GRAFANA_CLOUD_USERNAME }}:${{ secrets.GRAFANA_CLOUD_PASSWORD }}" \
           -H "Content-Type: application/json" \
-          -u "${{ secrets.GRAFANA_CLOUD_USERNAME }}:${{ secrets.GRAFANA_CLOUD_PASSWORD }}" \
           -d '{
                 "metrics": [
                   {
-                    "name": "ci_build_duration_seconds",
+                    "name": "test.ci_build_duration_seconds",
+                    "interval": 10,
                     "value": "${{ env.build_duration }}",
-                    "labels": {
-                      "project": "${{ github.repository }}",
-                      "branch": "${{ github.ref_name }}"
-                    }
+                    "tags": ["project:tomatillo", "source:github_action"],
+                    "time": ${{ env.end_time }}
                   }
                 ]
               }' \
-          ${{ secrets.GRAFANA_CLOUD_PROMETHEUS_URL }}/api/prom/push
+          ${{ secrets.GRAPHITE_URL }}
