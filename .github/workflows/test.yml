@@ -38,6 +38,7 @@ jobs:
           start_time=$(date +%s)
           go test -v ./...
           end_time=$(date +%s)
+          echo "end_time=$end_time" >> $GITHUB_ENV
           echo "build_duration=$((end_time - start_time))"
           echo "build_duration=$((end_time - start_time))" >> $GITHUB_ENV
 
@@ -53,7 +54,7 @@ jobs:
                     "interval": 10,
                     "value": "${{ env.build_duration }}",
                     "tags": ["project:tomatillo", "source:github_action"],
-                    "time": date +%s
+                    "time": ${{ env.end_time }}
                   }
                 ]
               }' \
