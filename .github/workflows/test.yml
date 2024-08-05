@@ -47,15 +47,12 @@ jobs:
           curl -X POST \
           -H "Authorization: Bearer ${{ secrets.GRAFANA_CLOUD_USERNAME }}:${{ secrets.GRAFANA_CLOUD_PASSWORD }}" \
           -H "Content-Type: application/json" \
-          -d '{
-                "metrics": [
-                  {
-                    "name": "test.ci_build_duration_seconds",
-                    "interval": 10,
-                    "value": "${{ env.build_duration }}",
-                    "tags": ["project:tomatillo", "source:github_action"],
-                    "time": ${{ env.end_time }}
-                  }
-                ]
-              }' \
-          ${{ secrets.GRAPHITE_URL }}
+          ${{ secrets.GRAPHITE_URL }} \
+          -d '[{
+                  "name": "test.duration_seconds",
+                  "interval": 10,
+                  "value": ${{ env.build_duration }},
+                  "tags": ["project:tomatillo", "source:github_action"],
+                  "time": ${{ env.end_time }}
+              }]
+
