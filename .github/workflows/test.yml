@@ -49,7 +49,7 @@ jobs:
           -H "Content-Type: application/json" \
           ${{ secrets.GRAPHITE_URL }} \
           -d '[{
-                  "name": "test.duration_seconds",
+                  "name": "test.duration",
                   "interval": 10,
                   "value": ${{ env.build_duration }},
                   "tags": ["project:tomatillo", "source:github_action"],
