@@ -54,5 +54,5 @@ jobs:
                   "value": ${{ env.build_duration }},
                   "tags": ["project:tomatillo", "source:github_action"],
                   "time": ${{ env.end_time }}
-              }]
+              }]'
 
