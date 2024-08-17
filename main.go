@@ -1,49 +1,94 @@
 package main
 
 import (
-    "log"
-    
-    "tomatillo/task" // Corrected import path
-    
-    "github.com/rivo/tview"
+	"database/sql"
+	"flag"
+	"fmt"
+	"os"
 )
 
+var db *sql.DB
+
 func main() {
-    taskManager := task.NewTaskManager()
+    db = initializeDatabase()
+    defer db.Close()
 
-    app := tview.NewApplication()
-
-    // Task List View
-    taskList := tview.NewList()
-
-    // Form for adding tasks
-    form := tview.NewForm()
-
-    form.AddInputField("Title", "", 20, nil, nil).
-        AddButton("Add Task", func() {
-            title := form.GetFormItemByLabel("Title").(*tview.InputField).GetText()
-            if title != "" {
-                taskManager.AddTask(title)
-                updateTaskList(taskList, taskManager)
-            }
-        }).
-		AddButton("Quit", func () {
-			app.Stop()
-		})
-
-    // Layout
-    flex := tview.NewFlex().
-        AddItem(taskList, 0, 1, true).
-        AddItem(form, 0, 1, false)
-
-    if err := app.SetRoot(flex, true).SetFocus(form).Run(); err != nil {
-        log.Fatalf("Error launching application: %v\n", err)
+    if len(os.Args) < 2 {
+        fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', 'delete', or 'report' subcommands")
+        os.Exit(1)
     }
-}
 
-func updateTaskList(taskList *tview.List, taskManager *task.TaskManager) {
-    taskList.Clear()
-    for _, task := range taskManager.GetTasks() { // Corrected method name
-        taskList.AddItem(task.Title, "", 0, nil)
+    // Define subcommands
+    addTaskFlag := flag.NewFlagSet("add", flag.ExitOnError)
+    taskName := addTaskFlag.String("name", "", "Task name")
+    taskEstimate := addTaskFlag.Int("estimate", 1, "Pomodoro estimate")
+
+    listTasksFlag := flag.NewFlagSet("list", flag.ExitOnError)
+    listDays := listTasksFlag.Int("days", 0, "Number of days' tasks to show")
+
+    updateTaskFlag := flag.NewFlagSet("update", flag.ExitOnError)
+    taskId := updateTaskFlag.Int("id", 0, "Task ID to update")
+
+    doneTaskFlag := flag.NewFlagSet("done", flag.ExitOnError)
+    doneTaskId := doneTaskFlag.Int("id", 0, "Task ID to mark as done")
+
+    editTaskFlag := flag.NewFlagSet("edit", flag.ExitOnError)
+    editTaskId := editTaskFlag.Int("id", 0, "Task ID to edit")
+    newEstimate := editTaskFlag.Int("estimate", 1, "New Pomodoro estimate")
+
+    reportFlag := flag.NewFlagSet("report", flag.ExitOnError)
+    reportType := reportFlag.String("type", "monthly", "Report type: 'monthly' or 'yearly'")
+
+    // delete flag
+    deleteTaskFlag := flag.NewFlagSet("delete", flag.ExitOnError)
+    deleteTaskId := deleteTaskFlag.Int("id", 0, "Task ID to delete")
+
+    // Parse based on subcommand
+    switch os.Args[1] {
+    case "add":
+        addTaskFlag.Parse(os.Args[2:])
+        addTask(db, *taskName, *taskEstimate)
+    case "list":
+        listTasksFlag.Parse(os.Args[2:])
+        listTasks(*listDays)
+    case "update":
+        updateTaskFlag.Parse(os.Args[2:])
+        if *taskId > 0 {
+            updateActual(*taskId)
+        } else {
+            fmt.Println("Please provide a valid task ID.")
+        }
+    case "done":
+        doneTaskFlag.Parse(os.Args[2:])
+        if *doneTaskId > 0 {
+            markAsDone(*doneTaskId)
+        } else {
+            fmt.Println("Please provide a valid task ID.")
+        }
+    case "edit":
+        editTaskFlag.Parse(os.Args[2:])
+        if *editTaskId > 0 {
+            updateEstimate(*editTaskId, *newEstimate)
+        } else {
+            fmt.Println("Please provide a valid task ID and new estimate.")
+        }
+    case "report":
+        reportFlag.Parse(os.Args[2:])
+        if *reportType == "yearly" {
+            generateYearlyCalendarReport(db)
+        } else {
+            generateMonthlyReport(db)
+        }
+    // case delete
+    case "delete":
+        deleteTaskFlag.Parse(os.Args[2:])
+        if *deleteTaskId > 0 {
+            deleteTask(db, *deleteTaskId)
+        } else {
+            fmt.Println("Please provide a valid task ID.")
+        }
+    default:
+        fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', or 'report' subcommands")
+        os.Exit(1)
     }
 }
