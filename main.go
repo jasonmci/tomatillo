@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
 var db *sql.DB
@@ -15,7 +18,7 @@ func main() {
 	defer db.Close()
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', 'delete', or 'report' subcommands")
+		fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
 		os.Exit(1)
 	}
 
@@ -36,8 +39,12 @@ func main() {
 		handleReportCommand(os.Args[2:])
 	case "delete":
 		handleDeleteCommand(os.Args[2:])
+	case "load":
+		handleLoadTasksCommand(db, os.Args[2:])
+	case "concise":
+		handleConciseReport(db)
 	default:
-		fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', 'delete', or 'report' subcommands")
+		fmt.Println("expected 'add', 'concise', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
 		os.Exit(1)
 	}
 }
@@ -53,6 +60,97 @@ func handleAddCommand(db *sql.DB, args []string) error {
 		return fmt.Errorf("task name is required")
 	}
 	addTask(db, *taskName, *taskEstimate)
+	return nil
+}
+
+func handleConciseReport(db *sql.DB) {
+	query := `
+    SELECT id, name, estimate, actual, created_at, updated_at, done 
+    FROM tasks 
+    WHERE DATE(datetime(created_at, 'localtime')) = DATE('now', 'localtime')
+    ORDER BY created_at;
+    `
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var totalEstimate, totalActual, totalTasks, completedTasks int
+
+	fmt.Printf("| %-3s | %-5s | %-54s | %-4s | %-4s |\n", "ID", "Done?", "Task", "Est.", "Act.")
+	fmt.Println("| --- | ----- | ------------------------------------------------------ | ---- | ---- |")
+	//fmt.Println(strings.Repeat("-", 80))
+
+	for rows.Next() {
+		var id, estimate, actual int
+		var name, createdAt, updatedAt string
+		var done bool
+
+		err := rows.Scan(&id, &name, &estimate, &actual, &createdAt, &updatedAt, &done)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		status := "No"
+		if done {
+			status = "Yes"
+			completedTasks++
+		}
+
+		totalEstimate += estimate
+		totalActual += actual
+		totalTasks++
+
+		fmt.Printf("| %-3d | %-5s | %-54s | %-4d | %-4d |\n", id, status, name, estimate, actual)
+	}
+
+	fmt.Println("\n**Summary:**")
+	fmt.Printf("\n- Estimated: %d\n- Actual:    %d\n",
+		totalEstimate, totalActual)
+	fmt.Printf("- Tasks Completed/Total: %d of %d\n", completedTasks, totalTasks)
+}
+
+
+func handleLoadTasksCommand(db *sql.DB, args []string) error {
+	loadTasksFlag := flag.NewFlagSet("load", flag.ExitOnError)
+	filePath := loadTasksFlag.String("file", "", "Path to the file containing tasks and estimates")
+	loadTasksFlag.Parse(args)
+
+	if *filePath == "" {
+		return fmt.Errorf("file path is required")
+	}
+
+	file, err := os.Open(*filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, ",")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid format in line: %s", line)
+		}
+		taskName := strings.TrimSpace(parts[0])
+		estimate, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil {
+			return fmt.Errorf("invalid estimate in line: %s", line)
+		}
+		err = addTask(db, taskName, estimate)
+		if err != nil {
+			return fmt.Errorf("failed to add task: %v", err)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading file: %v", err)
+	}
+
+	fmt.Println("Tasks successfully loaded from file.")
 	return nil
 }
 
