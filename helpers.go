@@ -26,16 +26,20 @@ func addTask(db *sql.DB, name string, estimate int) error {
     query := `INSERT INTO tasks (name, estimate, actual, created_at, updated_at, done) 
     VALUES (?, ?, 0, ?, ?, 0)`
     
-    _, err := db.Exec(query, name, estimate, now.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05"))
+    result, err := db.Exec(query, name, estimate, now.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05"))
     if err != nil {
         return fmt.Errorf("failed to add task: %v", err)
     }
-
+    
+    id, err := result.LastInsertId()
+    if err != nil {
+        return fmt.Errorf("failed to get the ID of the inserted task: %v", err)
+    }
+    
     estimateSprouts := generateEmojis(estimate, "🌱")
-    fmt.Printf("Added task: %s with estimate: %d %s\n", name, estimate, estimateSprouts)
+    fmt.Printf("Added task: %s\nID: %d\nEstimate: %d %s\n", name, id, estimate, estimateSprouts)
     return nil
 }
-
 
 func updateActual(id int) {
 
