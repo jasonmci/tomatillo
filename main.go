@@ -18,7 +18,7 @@ func main() {
 	defer db.Close()
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'add', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
+		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
 		os.Exit(1)
 	}
 
@@ -41,19 +41,38 @@ func main() {
 		handleDeleteCommand(os.Args[2:])
 	case "load":
 		handleLoadTasksCommand(db, os.Args[2:])
-	case "concise":
-		handleConciseReport(db)
+	case "simple":
+		handlesimpleReport(db)
+	case "help":
+		handleHelpCommand()
 	default:
-		fmt.Println("expected 'add', 'concise', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
+		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
 		os.Exit(1)
 	}
+}
+
+func handleHelpCommand() {
+	fmt.Println("Usage: task [command] [arguments]")
+	fmt.Println("\nCommands:")
+	fmt.Println("  add     Add a new task")
+	fmt.Println("  list    List tasks")
+	fmt.Println("  update  Update the actual pomodoros of a task")
+	fmt.Println("  done    Mark a task as done")
+	fmt.Println("  edit    Edit the estimate of a task")
+	fmt.Println("  report  Generate a report")
+	fmt.Println("  delete  Delete a task")
+	fmt.Println("  load    Load tasks from a file")
+	fmt.Println("  simple  Generate a simple report")
 }
 
 // Helper function to handle the 'add' command
 func handleAddCommand(db *sql.DB, args []string) error {
 	addTaskFlag := flag.NewFlagSet("add", flag.ExitOnError)
-	taskName := addTaskFlag.String("name", "", "Task name")
-	taskEstimate := addTaskFlag.Int("estimate", 1, "Pomodoro estimate")
+	taskName := addTaskFlag.String("name", "", "Task name (or use -n)")
+	taskEstimate := addTaskFlag.Int("estimate", 1, "Pomodoro estimate (or use -e)")
+	addTaskFlag.StringVar(taskName, "n", "", "Task name (short version)")
+	addTaskFlag.IntVar(taskEstimate, "e", 1, "Pomodoro estimate (short version)")
+
 	addTaskFlag.Parse(args)
 
 	if *taskName == "" {
@@ -63,7 +82,7 @@ func handleAddCommand(db *sql.DB, args []string) error {
 	return nil
 }
 
-func handleConciseReport(db *sql.DB) {
+func handlesimpleReport(db *sql.DB) {
 	query := `
     SELECT id, name, estimate, actual, created_at, updated_at, done 
     FROM tasks 
@@ -116,6 +135,9 @@ func handleConciseReport(db *sql.DB) {
 func handleLoadTasksCommand(db *sql.DB, args []string) error {
 	loadTasksFlag := flag.NewFlagSet("load", flag.ExitOnError)
 	filePath := loadTasksFlag.String("file", "", "Path to the file containing tasks and estimates")
+	// add a short version of the flag
+	loadTasksFlag.StringVar(filePath, "f", "", "Path to the file containing tasks and estimates")
+
 	loadTasksFlag.Parse(args)
 
 	if *filePath == "" {
@@ -159,6 +181,10 @@ func handleLoadTasksCommand(db *sql.DB, args []string) error {
 func handleListCommand(args []string) {
 	listTasksFlag := flag.NewFlagSet("list", flag.ExitOnError)
 	listDays := listTasksFlag.Int("days", 0, "Number of days' tasks to show")
+
+	// add a short version of the flag
+	listTasksFlag.IntVar(listDays, "d", 0, "Number of days' tasks to show")
+
 	listTasksFlag.Parse(args)
 	listTasks(*listDays)
 }
@@ -194,6 +220,8 @@ func handleEditCommand(args []string) {
 	editTaskFlag := flag.NewFlagSet("edit", flag.ExitOnError)
 	editTaskId := editTaskFlag.Int("id", 0, "Task ID to edit")
 	newEstimate := editTaskFlag.Int("estimate", 1, "New Pomodoro estimate")
+	// add a short version of the flag
+	editTaskFlag.IntVar(newEstimate, "e", 1, "New Pomodoro estimate")
 	editTaskFlag.Parse(args)
 
 	if *editTaskId <= 0 {
@@ -207,6 +235,8 @@ func handleEditCommand(args []string) {
 func handleReportCommand(args []string) {
 	reportFlag := flag.NewFlagSet("report", flag.ExitOnError)
 	reportType := reportFlag.String("type", "monthly", "Report type: 'monthly' or 'yearly'")
+	// add a short version of the flag
+	reportFlag.StringVar(reportType, "t", "monthly", "Report type: 'monthly' or 'yearly'")
 	reportFlag.Parse(args)
 
 	if *reportType == "yearly" {
