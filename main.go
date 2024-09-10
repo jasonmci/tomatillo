@@ -234,15 +234,17 @@ func handleEditCommand(args []string) {
 // Helper function to handle the 'report' command
 func handleReportCommand(args []string) {
 	reportFlag := flag.NewFlagSet("report", flag.ExitOnError)
-	reportType := reportFlag.String("type", "monthly", "Report type: 'monthly' or 'yearly'")
+	reportType := reportFlag.String("type", "monthly", "Report type: 'monthly','yearly' or 'weekly'")
 	// add a short version of the flag
-	reportFlag.StringVar(reportType, "t", "monthly", "Report type: 'monthly' or 'yearly'")
+	reportFlag.StringVar(reportType, "t", "weekly", "Report type: 'monthly' or 'yearly' or 'weekly'")
 	reportFlag.Parse(args)
 
 	if *reportType == "yearly" {
 		generateYearlyCalendarReport(db)
-	} else {
+	} else if *reportType == "monthly" {
 		generateMonthlyReport(db)
+	} else {
+		generateWeeklyReport(db)
 	}
 }
 

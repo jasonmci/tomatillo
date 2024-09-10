@@ -8,6 +8,36 @@ import (
 	"time"
 )
 
+func generateWeeklyReport(db *sql.DB) {
+    data, err := getYearlyData(db)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // print the weekly report from Sunday to Saturday
+    fmt.Println("Weekly Report")
+    fmt.Println("Day         | Done | Actual         ")
+    fmt.Println("------------|------|----------------")
+
+    allDays := getAllDaysOfWeek()
+    dataMap := make(map[string]DayAggregate)
+
+    // Map data to dates
+    for _, dayAggregate := range data {
+        dataMap[dayAggregate.Day] = dayAggregate
+    }
+
+    for _, day := range allDays {
+        if aggregate, found := dataMap[day]; found {
+            actualTomatoes := generateEmojis(aggregate.TotalActual, "🍅")
+            fmt.Printf("%-11s | %-4d | %-7s\n", day, aggregate.TotalDone, actualTomatoes)
+        } else {
+            fmt.Printf("%-11s | %-4d | %-7s\n", day, 0, "")
+        }
+    }
+
+}
+
 func generateMonthlyReport(db *sql.DB) {
     data, err := getMonthlyData(db)
     if err != nil {

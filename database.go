@@ -88,11 +88,25 @@ func getAllDaysOfMonth() []string {
     return days
 }
 
+func getAllDaysOfWeek() []string {
+    var days []string
+    now := time.Now()
+
+    for i := 0; i < 7; i++ {
+        day := now.AddDate(0, 0, -int(now.Weekday())+i)
+        days = append(days, day.Format("2006-01-02"))
+    }
+
+    return days
+}
+
 func getYearlyData(db *sql.DB) ([]DayAggregate, error) {
     query := `
     SELECT
         DATE(datetime(created_at, 'localtime')) as day,
-        SUM(actual) as total_actual
+        SUM(actual) as total_actual,
+        SUM(estimate) as total_estimate,
+        SUM(done) as total_done
     FROM tasks
     WHERE strftime('%Y', datetime(created_at, 'localtime')) = strftime('%Y', 'now', 'localtime')
     GROUP BY day
@@ -108,7 +122,7 @@ func getYearlyData(db *sql.DB) ([]DayAggregate, error) {
     var dayAggregates []DayAggregate
     for rows.Next() {
         var dayAggregate DayAggregate
-        err := rows.Scan(&dayAggregate.Day, &dayAggregate.TotalActual)
+        err := rows.Scan(&dayAggregate.Day, &dayAggregate.TotalActual, &dayAggregate.TotalEstimate, &dayAggregate.TotalDone)
         if err != nil {
             return nil, err
         }
