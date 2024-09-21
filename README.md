@@ -1,15 +1,6 @@
 # tomatillo
 A pomodoro app with good features
 
-
-## local testing
-
-Testing the build pipeline by running `act` to simulate the Github Actions workflow
-
-```bash
-act -j test
-```
-
 ## usage
 
 ```
@@ -135,3 +126,25 @@ Su Mo Tu We Th Fr Sa
 -- -- -- -- -- -- --
 -- --
 ```
+
+
+## local testing
+
+Testing the build pipeline by running `act` to simulate the Github Actions workflow
+
+```bash
+act -j test
+```
+
+## Building
+
+Build the binary and move it to a location in your path
+
+```bash
+go build -o tomatillo
+
+mv ./tomatillo ~/go/bin/
+```
+
+
+
