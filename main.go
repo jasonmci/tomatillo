@@ -39,6 +39,8 @@ func main() {
 		handleReportCommand(os.Args[2:])
 	case "delete":
 		handleDeleteCommand(os.Args[2:])
+	case "activate":
+		handleActivateCommand(os.Args[2:])
 	case "load":
 		handleLoadTasksCommand(db, os.Args[2:])
 	case "simple":
@@ -103,7 +105,6 @@ func handlesimpleReport(db *sql.DB) {
 
 	fmt.Printf("| %-3s | %-5s | %-54s | %-4s | %-4s |\n", "ID", "Done?", "Task", "Est.", "Act.")
 	fmt.Println("| --- | ----- | ------------------------------------------------------ | ---- | ---- |")
-	//fmt.Println(strings.Repeat("-", 80))
 
 	for rows.Next() {
 		var id, estimate, actual int
@@ -192,6 +193,21 @@ func handleListCommand(args []string) {
 	listTasks(*listDays)
 }
 
+
+// helper function to handle activating a current task
+func handleActivateCommand(args []string) {
+	activateTaskFlag := flag.NewFlagSet("activate", flag.ExitOnError)
+	activateTaskId := activateTaskFlag.Int("id", 0, "Task ID to activate")
+	activateTaskFlag.Parse(args)
+
+	if *activateTaskId <= 0 {
+		log.Println("Please provide a valid task ID.")
+		os.Exit(1)
+	}
+	activateTask(*activateTaskId)
+}
+
+
 // Helper function to handle the 'update' command
 func handleUpdateCommand(args []string) {
 	updateTaskFlag := flag.NewFlagSet("update", flag.ExitOnError)
@@ -246,6 +262,8 @@ func handleReportCommand(args []string) {
 		generateYearlyCalendarReport(db)
 	} else if *reportType == "monthly" {
 		generateMonthlyReport(db)
+	} else if *reportType == "daily" {
+		generateDailyReport("2024-09-21")
 	} else {
 		generateWeeklyReport(db)
 	}

@@ -162,4 +162,25 @@ func TestDeleteTask(t *testing.T) {
     }
 }
 
+func TestHalfHour(t *testing.T) {
+    tests := []struct {
+        hour    int
+        minute  int
+        expected int
+    }{
+        {12, 1, 24},
+        {23, 34, 47},
+        {9, 45, 19},
+        {0, 30, 1},
+        {0, 0, 0},
+    }
 
+    for _, tt := range tests {
+        result := getHalfHour(tt.hour, tt.minute)
+        if result != tt.expected {
+            t.Errorf("getHalfHour(%d, %d) = %d; want %d", tt.hour, tt.minute, result, tt.expected)
+        }
+    }
+
+
+}

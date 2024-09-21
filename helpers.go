@@ -41,6 +41,35 @@ func addTask(db *sql.DB, name string, estimate int) error {
     return nil
 }
 
+
+func getHalfHour(hour int, minute int) int {
+
+    if minute >= 30 {
+        return hour * 2 + 1
+    } else {
+        return hour * 2
+    }
+}
+
+func activateTask(id int) {
+    // get current date in yyyy-mm-dd format
+    // insert into task_tracking table
+
+    currentDate := time.Now().Format("2006-01-02")
+    half_hour := getHalfHour(time.Now().Hour(), time.Now().Minute())
+
+    query := `
+    INSERT INTO task_tracking (task_id, date, half_hour, status) 
+    VALUES (?, ?, ?, 'active')
+    ON CONFLICT(task_id, date, half_hour)
+    DO UPDATE SET status = 'done';
+    `
+    _, err := db.Exec(query, id, currentDate, half_hour)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
 func updateActual(id int) {
 
     query := `UPDATE tasks SET actual = actual + 1, updated_at = datetime('now', 'localtime') WHERE id = ?`
@@ -48,7 +77,8 @@ func updateActual(id int) {
     if err != nil {
         log.Fatal(err)
     }
-  
+
+      
     rowsAffected, err := result.RowsAffected()
     if err != nil {
         log.Fatal(err)

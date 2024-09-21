@@ -30,6 +30,23 @@ func initializeDatabase() *sql.DB {
         log.Fatal(err)
     }
 
+    createTasksTableQuery := `
+    CREATE TABLE IF NOT EXISTS task_tracking (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_id INTEGER NOT NULL,
+        date DATE NOT NULL,
+        half_hour INTEGER NOT NULL CHECK (half_hour BETWEEN 0 AND 47),
+        task_name TEXT,
+        status TEXT DEFAULT 'in progress',
+        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        UNIQUE(task_id, date, half_hour)
+    );`
+
+    _, err = db.Exec(createTasksTableQuery)
+    if err != nil {
+        log.Fatal(err)
+    }
+
     return db
 }
 
@@ -70,6 +87,13 @@ type DayAggregate struct {
     TotalEstimate int
     TotalActual   int
     TotalDone     int
+}
+
+type TaskTracking struct {
+    TaskID   int
+    Date     string
+    HalfHour     int
+    Status   string // e.g., "in progress", "done", etc.
 }
 
 func getAllDaysOfMonth() []string {
@@ -130,4 +154,24 @@ func getYearlyData(db *sql.DB) ([]DayAggregate, error) {
     }
 
     return dayAggregates, nil
+}
+
+func getTasksForDay(date string) ([]TaskTracking, error) {
+    rows, err := db.Query(`SELECT task_id, date, half_hour, status FROM task_tracking WHERE date = ?`, date)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var tasks []TaskTracking
+    for rows.Next() {
+        var task TaskTracking
+        err := rows.Scan(&task.TaskID, &task.Date, &task.HalfHour, &task.Status)
+        if err != nil {
+            return nil, err
+        }
+        tasks = append(tasks, task)
+    }
+
+    return tasks, nil
 }

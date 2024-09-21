@@ -128,3 +128,45 @@ func generateYearlyCalendarReport(db *sql.DB) {
         }
     }
 }
+
+func checkTaskForHalfHour(halfHour int, taskMap map[int]string) string {
+    // Check if a task exists in the specific half-hour slot
+    if status, exists := taskMap[halfHour]; exists {
+        return status // Return emoji if a task is found
+    }
+    return " " // No task found
+}
+
+func generateDailyReport(date string) {
+    tasks, err := getTasksForDay(date)
+    if err != nil {
+        fmt.Println("Error fetching tasks:", err)
+        return
+    }
+
+    // Initialize a map to track task status for each half-hour
+    taskMap := make(map[int]string)
+    for _, task := range tasks {
+        taskMap[task.HalfHour] = "*" // Use a tomato emoji for completed Pomodoros
+    }
+
+
+    // Print the header for hours
+    fmt.Println("           |00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23|")
+    // print horizonatal line
+    fmt.Println("           |-----------------------------------------------------------------------|")
+    
+    fmt.Printf("%s  ", date)
+
+    // Loop through the 48 half-hour slots (0 to 47)
+    for i := 0; i < 48; i += 2 {
+        // Check if tasks exist in each half-hour slot
+        firstHalf := checkTaskForHalfHour(i, taskMap)
+        secondHalf := checkTaskForHalfHour(i + 1, taskMap)
+
+        // Print the status for the two half-hour slots in each hour
+        fmt.Printf("%s%s ", firstHalf, secondHalf)
+    }
+    fmt.Println()
+}
+
