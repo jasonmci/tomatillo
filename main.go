@@ -43,10 +43,12 @@ func main() {
 		handleLoadTasksCommand(db, os.Args[2:])
 	case "simple":
 		handlesimpleReport(db)
+	case "version":
+		fmt.Println("tomatillo v0.1")
 	case "help":
 		handleHelpCommand()
 	default:
-		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
+		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', version', or 'report' subcommands")
 		os.Exit(1)
 	}
 }
@@ -63,6 +65,7 @@ func handleHelpCommand() {
 	fmt.Println("  delete  Delete a task")
 	fmt.Println("  load    Load tasks from a file")
 	fmt.Println("  simple  Generate a simple report")
+	fmt.Println("  version Print the version of the application")
 }
 
 // Helper function to handle the 'add' command
