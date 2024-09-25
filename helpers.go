@@ -9,7 +9,7 @@ import (
 )
 
 // Get start and end dates for the current week (Monday to Sunday)
-func getCurrentWeek() (string, string) {
+func getCurrentWeek() (time.Time, time.Time) {
     // Get the current date
     now := time.Now().Local()
     //fmt.Println(now)
@@ -20,7 +20,7 @@ func getCurrentWeek() (string, string) {
     //fmt.Println("---", monday)
 
     // Format as YYYY-MM-DD
-    return sunday.Format("2006-01-02"), saturday.Format("2006-01-02")
+    return sunday, saturday
 }
 
 func getCurrentMonth() (time.Time, time.Time) {

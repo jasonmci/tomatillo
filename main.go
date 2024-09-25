@@ -263,11 +263,11 @@ func handleReportCommand(args []string) {
 		generateYearlyCalendarReport(db)
 	} else if *reportType == "monthly" {
 		generateMonthlyReport(db)
-	} else if *reportType == "monthlyblock" {
+	} else if *reportType == "blockmonth" {
 			generateMonthlyBlockReport()
 	} else if *reportType == "daily" {
 		generateDailyReport("2024-09-21")
-	}  else if *reportType == "block" {
+	}  else if *reportType == "blockweek" {
 		generateWeeklyBlockReport()
 	} else {
 		generateWeeklyReport(db)

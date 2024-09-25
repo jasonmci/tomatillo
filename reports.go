@@ -179,7 +179,7 @@ func generateDailyReport(date string) {
 func generateWeeklyBlockReport() {
     startOfWeek, endOfWeek := getCurrentWeek()
     fmt.Println("╔══════════════════════════════════════════╗ ")
-    fmt.Printf( "║ Weekly Report (%s to %s) ║ \n", startOfWeek, endOfWeek)
+    fmt.Printf( "║ Weekly Report (%s to %s) ║ \n", startOfWeek.Format("2006-01-02"), endOfWeek.Format("2006-01-02"))
     fmt.Println("╠══════════════════════════════════════════╩═════════════════════════════════════════╗ ")
     fmt.Println("║            00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23 ║ ")
     fmt.Println("╠════════════════════════════════════════════════════════════════════════════════════╣ ")
