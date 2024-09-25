@@ -8,6 +8,36 @@ import (
 	"time"
 )
 
+// Get start and end dates for the current week (Monday to Sunday)
+func getCurrentWeek() (string, string) {
+    // Get the current date
+    now := time.Now().Local()
+    //fmt.Println(now)
+    // Find the Monday of the current week
+    sunday := now.AddDate(0, 0, -int(now.Weekday()))
+    // Get the Sunday of the current week
+    saturday := sunday.AddDate(0, 0, 6)
+    //fmt.Println("---", monday)
+
+    // Format as YYYY-MM-DD
+    return sunday.Format("2006-01-02"), saturday.Format("2006-01-02")
+}
+
+func getCurrentMonth() (time.Time, time.Time) {
+    // Get the current date
+    now := time.Now().Local()
+
+    // Find the first day of the month
+    firstOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+    // Find the last day of the month by going to the next month and subtracting one day
+    nextMonth := firstOfMonth.AddDate(0, 1, 0)
+    lastOfMonth := nextMonth.AddDate(0, 0, -1)
+
+    return firstOfMonth, lastOfMonth
+}
+
+
 func generateEmojis(count int, emoji string) string {
     result := ""
     for i := 0; i < count; i++ {

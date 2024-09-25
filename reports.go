@@ -129,12 +129,18 @@ func generateYearlyCalendarReport(db *sql.DB) {
     }
 }
 
+// Function to wrap text in color
+func colorize(text, color string) string {
+    return fmt.Sprintf("\033[%sm%s\033[0m", color, text)
+}
+
+
 func checkTaskForHalfHour(halfHour int, taskMap map[int]string) string {
     // Check if a task exists in the specific half-hour slot
     if status, exists := taskMap[halfHour]; exists {
         return status // Return emoji if a task is found
     }
-    return " " // No task found
+    return "·" // No task found, this is a middle dot, not a period.
 }
 
 func generateDailyReport(date string) {
@@ -143,20 +149,17 @@ func generateDailyReport(date string) {
         fmt.Println("Error fetching tasks:", err)
         return
     }
-
+    
     // Initialize a map to track task status for each half-hour
     taskMap := make(map[int]string)
     for _, task := range tasks {
-        taskMap[task.HalfHour] = "*" // Use a tomato emoji for completed Pomodoros
+        taskMap[task.HalfHour] = colorize("▓", "32") // Use a tomato emoji for completed Pomodoros
     }
 
 
     // Print the header for hours
-    fmt.Println("           |00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23|")
-    // print horizonatal line
-    fmt.Println("           |-----------------------------------------------------------------------|")
-    
-    fmt.Printf("%s  ", date)
+   
+    fmt.Printf("║ %s ", date)
 
     // Loop through the 48 half-hour slots (0 to 47)
     for i := 0; i < 48; i += 2 {
@@ -166,7 +169,46 @@ func generateDailyReport(date string) {
 
         // Print the status for the two half-hour slots in each hour
         fmt.Printf("%s%s ", firstHalf, secondHalf)
+        
     }
-    fmt.Println()
+    fmt.Println("║")
 }
 
+
+// Generate a weekly block report
+func generateWeeklyBlockReport() {
+    startOfWeek, endOfWeek := getCurrentWeek()
+    fmt.Println("╔══════════════════════════════════════════╗ ")
+    fmt.Printf( "║ Weekly Report (%s to %s) ║ \n", startOfWeek, endOfWeek)
+    fmt.Println("╠══════════════════════════════════════════╩═════════════════════════════════════════╗ ")
+    fmt.Println("║            00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23 ║ ")
+    fmt.Println("╠════════════════════════════════════════════════════════════════════════════════════╣ ")
+
+    // Iterate through each day of the week
+    for i := 0; i < 7; i++ {
+        day := time.Now().Local().AddDate(0, 0, -int(time.Now().Weekday())+i).Format("2006-01-02")
+        //fmt.Printf("\n%s\n", day)
+        generateDailyReport(day)  // Reuse your daily report generation
+    }
+
+    fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
+}
+
+// Generate a monthly block report
+func generateMonthlyBlockReport() {
+    startOfMonth, endOfMonth := getCurrentMonth()
+    fmt.Println("╔═══════════════════════════════════════════╗ ")
+    fmt.Printf( "║ Monthly Report (%s to %s) ║ \n", startOfMonth.Format("2006-01-02"), endOfMonth.Format("2006-01-02"))
+    fmt.Println("╠═══════════════════════════════════════════╩════════════════════════════════════════╗ ")
+    fmt.Println("║            00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23 ║ ")
+    fmt.Println("╠════════════════════════════════════════════════════════════════════════════════════╣ ")
+
+    // Iterate through each day of the month
+    for day := startOfMonth; !day.After(endOfMonth); day = day.AddDate(0, 0, 1) {
+        dayStr := day.Format("2006-01-02")
+        //fmt.Printf("\n%s\n", day)
+        generateDailyReport(dayStr)  // Reuse your daily report generation
+    }
+
+    fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
+}

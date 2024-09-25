@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
 )
 
 var db *sql.DB
@@ -262,8 +263,12 @@ func handleReportCommand(args []string) {
 		generateYearlyCalendarReport(db)
 	} else if *reportType == "monthly" {
 		generateMonthlyReport(db)
+	} else if *reportType == "monthlyblock" {
+			generateMonthlyBlockReport()
 	} else if *reportType == "daily" {
 		generateDailyReport("2024-09-21")
+	}  else if *reportType == "block" {
+		generateWeeklyBlockReport()
 	} else {
 		generateWeeklyReport(db)
 	}
