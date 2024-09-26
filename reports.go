@@ -146,7 +146,7 @@ func generateYearlyCountReport() {
     fmt.Println("╔═══════════════════════════════════════════╗ ")
     fmt.Printf( "║ Yearly Report (%s to %s)  ║  \n", startOfYear.Format("2006-01-02"), endOfYear.Format("2006-01-02")) 
     fmt.Println("╠═══════════════════════════════════════════╩═══════════════════════════════════════════════════════╗ ")
-    fmt.Print("║      01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 ║ ")
+    fmt.Print("║       01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31║ ")
 
     for _, report := range reports {
         // Check if the month changes, and print the header for a new month
