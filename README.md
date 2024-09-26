@@ -13,9 +13,9 @@ done        Mark a task as done
     --id
 edit        Edit the estimate of a task
 report      Generate a report
-    --type monthly
+    --type blockmonth
     --type yearly
-    --type weekly (default)
+    --type blockweek
 delete      Delete a task
     --id 
 load        Load tasks from a file
