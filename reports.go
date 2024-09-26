@@ -168,9 +168,9 @@ func generateYearlyCountReport() {
             
         // Print each day's task count
         if report.TaskCount == 0 {
-            fmt.Printf("%2s ", "··")
+            fmt.Printf("%3s", "··")
         } else {
-            fmt.Printf(" %2s ", colorize(fmt.Sprintf("%d", report.TaskCount), "33"))
+            fmt.Printf(" %3s", colorize(fmt.Sprintf("%2d", report.TaskCount), "33"))
         }
         lastDay = report.Day
     }

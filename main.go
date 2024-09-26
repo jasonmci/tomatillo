@@ -19,7 +19,7 @@ func main() {
 	defer db.Close()
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
+		fmt.Println("expected 'add', 'activate', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', or 'report' subcommands")
 		os.Exit(1)
 	}
 
@@ -51,7 +51,7 @@ func main() {
 	case "help":
 		handleHelpCommand()
 	default:
-		fmt.Println("expected 'add', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', version', or 'report' subcommands")
+		fmt.Println("expected 'add', 'activate', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', version', or 'report' subcommands")
 		os.Exit(1)
 	}
 }
