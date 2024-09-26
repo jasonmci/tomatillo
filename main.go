@@ -190,8 +190,11 @@ func handleListCommand(args []string) {
 	// add a short version of the flag
 	listTasksFlag.IntVar(listDays, "d", 0, "Number of days' tasks to show")
 
+	status := listTasksFlag.String("status", "all", "Status of tasks to show: 'all', 'done', 'todo', 'wip'")
+	listTasksFlag.StringVar(status, "s", "all", "Short version of status filter: active, completed, or all")
+
 	listTasksFlag.Parse(args)
-	listTasks(*listDays)
+    listTasks(*listDays, strings.ToLower(*status))
 }
 
 
@@ -260,7 +263,7 @@ func handleReportCommand(args []string) {
 	reportFlag.Parse(args)
 
 	if *reportType == "yearly" {
-		generateYearlyCalendarReport(db)
+		generateYearlyCountReport()
 	} else if *reportType == "monthly" {
 		generateMonthlyReport(db)
 	} else if *reportType == "blockmonth" {
@@ -270,7 +273,7 @@ func handleReportCommand(args []string) {
 	}  else if *reportType == "blockweek" {
 		generateWeeklyBlockReport()
 	} else {
-		generateWeeklyReport(db)
+		generateWeeklyBlockReport()
 	}
 }
 

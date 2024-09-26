@@ -6,36 +6,33 @@ import (
 	"log"
 	"strings"
 	"time"
+
 )
 
-func generateWeeklyReport(db *sql.DB) {
-    data, err := getYearlyData(db)
-    if err != nil {
-        log.Fatal(err)
+// Function to wrap text in color
+func colorize(text, color string) string {
+    return fmt.Sprintf("\033[%sm%s\033[0m", color, text)
+}
+
+func checkTaskForHalfHour(halfHour int, taskMap map[int]string) string {
+    // Check if a task exists in the specific half-hour slot
+    if status, exists := taskMap[halfHour]; exists {
+        return status // Return emoji if a task is found
     }
+    return "·" // No task found, this is a middle dot, not a period.
+}
 
-    // print the weekly report from Sunday to Saturday
-    fmt.Println("Weekly Report")
-    fmt.Println("Day         | Done | Actual         ")
-    fmt.Println("------------|------|----------------")
+func formatDate(t time.Time) string {
+    return t.Format("2006-01-02") // Go uses a reference date to specify the format
+}
 
-    allDays := getAllDaysOfWeek()
-    dataMap := make(map[string]DayAggregate)
+func getHalfHour(hour int, minute int) int {
 
-    // Map data to dates
-    for _, dayAggregate := range data {
-        dataMap[dayAggregate.Day] = dayAggregate
+    if minute >= 30 {
+        return hour * 2 + 1
+    } else {
+        return hour * 2
     }
-
-    for _, day := range allDays {
-        if aggregate, found := dataMap[day]; found {
-            actualTomatoes := generateEmojis(aggregate.TotalActual, "🍅")
-            fmt.Printf("%-11s | %-4d | %-7s\n", day, aggregate.TotalDone, actualTomatoes)
-        } else {
-            fmt.Printf("%-11s | %-4d | %-7s\n", day, 0, "")
-        }
-    }
-
 }
 
 func generateMonthlyReport(db *sql.DB) {
@@ -54,7 +51,7 @@ func generateMonthlyReport(db *sql.DB) {
 
     fmt.Println("Monthly Report")
     fmt.Println("Day         | Done | Actual         ")
-    fmt.Println("------------|------|----------------")
+    fmt.Println("════════════|══════|════════════════")
 
     for _, day := range allDays {
         if aggregate, found := dataMap[day]; found {
@@ -65,82 +62,6 @@ func generateMonthlyReport(db *sql.DB) {
             fmt.Printf("%-11s | %-4d | %-7s\n", day, 0, "")
         }
     }
-}
-
-func generateYearlyCalendarReport(db *sql.DB) {
-    data, err := getYearlyData(db)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    dataMap := make(map[string]int)
-    for _, dayAggregate := range data {
-        dataMap[dayAggregate.Day] = dayAggregate.TotalActual
-    }
-
-    now := time.Now()
-    year := now.Year()
-    currentMonth := int(now.Month())
-
-    fmt.Printf("Tomatillo Completion Calendar (Last 12 Months) ending %s %d\n", now.Format("January"), year)
-
-    fmt.Println(strings.Repeat("-", 90))
-
-    for offset := 11; offset >= 0; offset-- {
-
-        month := currentMonth - offset
-        yearOffset := 0 
-
-        if month <= 0 {
-            month += 12
-            yearOffset = -1
-        }
-
-        firstDay := time.Date(year + yearOffset, time.Month(month), 1, 0, 0, 0, 0, time.Local)
-        daysInMonth := firstDay.AddDate(0, 1, -1).Day()
-
-        fmt.Printf("\n\n%s\n", firstDay.Format("January"))
-        fmt.Println("Su Mo Tu We Th Fr Sa")
-
-        startOffset := int(firstDay.Weekday())
-        if startOffset > 0 {
-            fmt.Print(strings.Repeat("   ", startOffset))
-        }
-
-        for day := 1; day <= daysInMonth; day++ {
-            currentDay := firstDay.AddDate(0, 0, day-1).Format("2006-01-02")
-            tomatoes := dataMap[currentDay]
-            if tomatoes > 9 {
-                fmt.Printf("\033[32m%2d \033[0m", tomatoes) // Green text for counts > 9
-            } else if tomatoes < 3 && tomatoes > 0{
-                // print in yellow text
-                fmt.Printf("\033[33m%2d \033[0m", tomatoes)
-
-            } else if tomatoes >= 3 && tomatoes <= 9 {
-                fmt.Printf("%2d ", tomatoes)
-            } else {
-                fmt.Printf("-- ")
-            }
-
-            if (day+startOffset)%7 == 0 {
-                fmt.Println()
-            }
-        }
-    }
-}
-
-// Function to wrap text in color
-func colorize(text, color string) string {
-    return fmt.Sprintf("\033[%sm%s\033[0m", color, text)
-}
-
-
-func checkTaskForHalfHour(halfHour int, taskMap map[int]string) string {
-    // Check if a task exists in the specific half-hour slot
-    if status, exists := taskMap[halfHour]; exists {
-        return status // Return emoji if a task is found
-    }
-    return "·" // No task found, this is a middle dot, not a period.
 }
 
 func generateDailyReport(date string) {
@@ -211,4 +132,74 @@ func generateMonthlyBlockReport() {
     }
 
     fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
+}
+
+// generate a report for yearly data of tasks completed. each row is a month and each column is a day
+func generateYearlyCountReport() {
+    
+    reports, _ := getYearlyData(db, 2024)
+    var currentMonth time.Month
+    var lastDay int
+    startOfYear, endOfYear := getCurrentYear()
+    fmt.Println("start of year", startOfYear)
+    fmt.Println("end of year", endOfYear)
+    fmt.Println("╔═══════════════════════════════════════════╗ ")
+    fmt.Printf( "║ Yearly Report (%s to %s)  ║  \n", startOfYear.Format("2006-01-02"), endOfYear.Format("2006-01-02")) 
+    fmt.Println("╠═══════════════════════════════════════════╩═══════════════════════════════════════════════════════╗ ")
+    fmt.Print("║      01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 ║ ")
+
+    for _, report := range reports {
+        // Check if the month changes, and print the header for a new month
+        if report.Month != currentMonth {
+
+            currentMonth = report.Month
+            monthAbbrev := getMonthAbbreviation(currentMonth)
+            if currentMonth == 3 && lastDay == 29 {
+                fmt.Print("      ║")
+            } else if currentMonth == 3 && lastDay == 28 {
+                fmt.Print("         ║")    
+            } else if currentMonth == 5 || currentMonth == 7 || currentMonth == 10 || currentMonth == 12 {
+                fmt.Print("   ║")             
+            } else if currentMonth.String() != "January" {
+                fmt.Print("║")
+            }
+            fmt.Printf("\n║ %s  ", monthAbbrev)
+        }
+            
+        // Print each day's task count
+        if report.TaskCount == 0 {
+            fmt.Printf("%2s ", "··")
+        } else {
+            fmt.Printf(" %2s ", colorize(fmt.Sprintf("%d", report.TaskCount), "33"))
+        }
+        lastDay = report.Day
+    }
+
+    fmt.Println("║\n╚═══════════════════════════════════════════════════════════════════════════════════════════════════╝ ")
+    fmt.Println()
+}
+
+// Function to generate report from the data
+func generateTaskReport(tasks []Task) {
+    fmt.Printf("%-3s   %-46s   %-12s   %-12s\n", "ID", "Name", "Created", "Updated")
+    fmt.Println(strings.Repeat("═", 80))
+
+    for _, task := range tasks {
+        estimateSprouts := generateEmojis(task.Estimate, "🌱")
+        actualTomatoes := generateEmojis(task.Actual, "🍅")
+
+        fmt.Printf("%-3d   %-46s   %-12s   %-12s\n", task.ID, task.Name, formatDate(task.CreatedAt), formatDate(task.UpdatedAt))
+        fmt.Printf("      %s\n", task.Status)
+        fmt.Printf("      Estimate: %s Actual: %s\n", estimateSprouts, actualTomatoes)
+        fmt.Println(strings.Repeat("═", 80))
+    }
+}
+
+func listTasks(days int, status string) {
+    tasks, err := getTasks(days, status)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    generateTaskReport(tasks)
 }
