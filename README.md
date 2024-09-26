@@ -73,61 +73,6 @@ And it will update your current task.
 
 Which means work for 25 minutes on task number 192
 
-### Generate a weekly report
-
-How productive have you been this week? 
-
-```bash
-tomatillo report
-```
-
-```
-Weekly Report
-Day         | Done | Actual
-------------|------|----------------
-2024-09-08  | 0    |
-2024-09-09  | 3    | 🍅🍅🍅🍅🍅🍅🍅🍅🍅🍅
-2024-09-10  | 2    | 🍅🍅🍅🍅🍅🍅🍅
-2024-09-11  | 0    |
-2024-09-12  | 0    |
-2024-09-13  | 0    |
-2024-09-14  | 0    |
-```
-
-How about for the year? 
-
-```bash
-tomatillo report --type yearly
-```
-
-```
-July
-Su Mo Tu We Th Fr Sa
-   --  3  4 --  4 10
- 1 --  2 --  3  2 --
- 1 -- -- -- -- --  4
- 2  6  5  5 -- -- --
- 2  2  3  1
-
-August
-Su Mo Tu We Th Fr Sa
-            --  1 --
- 3  1  3  1  5 --  1
- 1 -- -- --  7  5  6
- 2  7  2  2 --  1 --
- 2 --  5  4 -- -- --
-
-
-September
-Su Mo Tu We Th Fr Sa
---  3 --  3 -- -- --
--- 10  7 -- -- -- --
--- -- -- -- -- -- --
--- -- -- -- -- -- --
--- --
-```
-
-
 ## local testing
 
 Testing the build pipeline by running `act` to simulate the Github Actions workflow
@@ -147,6 +92,12 @@ mv ./tomatillo ~/go/bin/
 ```
 
 Weekly
+
+```
+tomatillo report --type blockweek
+```
+
+
 ```
 ╔══════════════════════════════════════════╗
 ║ Weekly Report (2024-09-22 to 2024-09-28) ║
@@ -163,6 +114,10 @@ Weekly
 ╚════════════════════════════════════════════════════════════════════════════════════╝
 ```
 Monthly
+
+```
+tomatillo report --type blockmonth
+```
 
 ```
 ╔═══════════════════════════════════════════╗ 
@@ -204,6 +159,10 @@ Monthly
 ```
 
 Yearly
+
+```
+tomatillo report --type yearly
+```
 
 ```
 ╔═══════════════════════════════════════════╗ 
