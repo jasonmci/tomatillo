@@ -116,54 +116,6 @@ func getDailyTasks(db *sql.DB) ([]Task, error){
     return tasks, nil
 }
 
-func getMonthlyData(db *sql.DB) ([]DayAggregate, error) {
-    query := `
-    SELECT
-        DATE(datetime(created_at, 'localtime')) as day,
-        SUM(estimate) as total_estimate,
-        SUM(actual) as total_actual,
-        COUNT(CASE WHEN done = 1 THEN 1 ELSE NULL END) as total_done
-    FROM tasks
-    WHERE strftime('%Y-%m', datetime(created_at, 'localtime')) = strftime('%Y-%m', 'now', 'localtime')
-    GROUP BY day
-    ORDER BY day;
-    `
-    
-    rows, err := db.Query(query)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-
-    var dayAggregates []DayAggregate
-    for rows.Next() {
-        var dayAggregate DayAggregate
-        err := rows.Scan(&dayAggregate.Day, &dayAggregate.TotalEstimate, &dayAggregate.TotalActual, &dayAggregate.TotalDone)
-        if err != nil {
-            return nil, err
-        }
-        dayAggregates = append(dayAggregates, dayAggregate)
-    }
-
-    return dayAggregates, nil
-}
-
-func getAllDaysOfMonth() []string {
-    now := time.Now()
-    year, month, _ := now.Date()
-    location := now.Location()
-
-    daysInMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, location).Day()
-    var days []string
-
-    for i := 1; i <= daysInMonth; i++ {
-        day := time.Date(year, month, i, 0, 0, 0, 0, location)
-        days = append(days, day.Format("2006-01-02"))
-    }
-
-    return days
-}
-
 func getYearlyData(db *sql.DB, year int) ([]TaskTrackingAggregate, error) {
     // aggregate half_hours completed for each day for the year
     query := fmt.Sprintf(`
@@ -309,15 +261,20 @@ func addTask(db *sql.DB, name string, estimate int) error {
     return nil
 }
 
-func activateTask(id int) {
+func activateTask(id int) error {
     // get current date in yyyy-mm-dd format
     // insert into task_tracking table
     currentDate := time.Now().Format("2006-01-02")
     half_hour := getHalfHour(time.Now().Hour(), time.Now().Minute())
-    insertTrackingTask(id, currentDate, half_hour)
+    err := insertTrackingTask(id, currentDate, half_hour)
+    if err != nil {
+        return fmt.Errorf("failed to activate task: %v", err)
+    }
+
+    return nil
 }
 
-func insertTrackingTask(id int, currentDate string, halfHour int) {
+func insertTrackingTask(id int, currentDate string, halfHour int) error {
     query := `
     INSERT INTO task_tracking (task_id, date, half_hour, status) 
     VALUES (?, ?, ?, 'active')
@@ -326,8 +283,10 @@ func insertTrackingTask(id int, currentDate string, halfHour int) {
     `
     _, err := db.Exec(query, id, currentDate, halfHour)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to insert tracking task: %v", err)
     }
+
+    return nil
 }
 
 func updateActual(id int) {
@@ -369,16 +328,17 @@ func updateEstimate(id int, newEstimate int) {
     }
 }
 
-func markAsDone(id int) {
+func markAsDone(id int) error {
     query := `UPDATE tasks SET done = 1, updated_at =  datetime('now', 'localtime') WHERE id = ?`
+    
     result, err := db.Exec(query, id)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to execute update query: %w", err)
     }
 
     rowsAffected, err := result.RowsAffected()
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to retrieve rows affected: %w", err)
     }
 
     if rowsAffected == 0 {
@@ -386,19 +346,22 @@ func markAsDone(id int) {
     } else {
         fmt.Printf("Task with ID: %d has been marked as done\n", id)
     }
+
+    return nil
 }
 
+
 // delete a task
-func deleteTask(db *sql.DB, id int) {
+func deleteTask(db *sql.DB, id int) error {
     query := `DELETE FROM tasks WHERE id = ?`
     result, err := db.Exec(query, id)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to delete task: %v", err)
     }
 
     rowsAffected, err := result.RowsAffected()
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to retrieve rows affected: %v", err)
     }
 
     if rowsAffected == 0 {
@@ -406,4 +369,6 @@ func deleteTask(db *sql.DB, id int) {
     } else {
         fmt.Printf("Task with ID: %d has been deleted\n", id)
     }
+
+    return nil
 }

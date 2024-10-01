@@ -4,27 +4,16 @@ import (
 	"time"
 )
 
-// Get start and end dates for the current week (Monday to Sunday)
-func getCurrentWeek() (time.Time, time.Time) {
-    now := time.Now().Local()
-    
-    sunday, saturday := getWeek(now)
-    return sunday, saturday
-}
-
 func getWeek(mytime time.Time) (time.Time, time.Time) {
-    
     sunday := mytime.AddDate(0, 0, -int(mytime.Weekday()))
     saturday := sunday.AddDate(0, 0, 6)
     return sunday, saturday
 }
 
-func getCurrentMonth() (time.Time, time.Time) {
-    // Get the current date
-    now := time.Now().Local()
+func getMonth(mytime time.Time) (time.Time, time.Time) {
 
     // Find the first day of the month
-    firstOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+    firstOfMonth := time.Date(mytime.Year(), mytime.Month(), 1, 0, 0, 0, 0, mytime.Location())
 
     // Find the last day of the month by going to the next month and subtracting one day
     nextMonth := firstOfMonth.AddDate(0, 1, 0)
@@ -39,24 +28,24 @@ func getMonthAbbreviation(month time.Month) string {
     return month.String()[:3]
 }
 
-func getCurrentYear() (time.Time, time.Time) {
-    // Get the current date
-    now := time.Now().Local()
-
-    // Find the first day of the year
-    firstOfYear := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location())
-
-    // Find the last day of the year by going to the next year and subtracting one day
-    nextYear := firstOfYear.AddDate(1, 0, 0)
-    lastOfYear := nextYear.AddDate(0, 0, -1)
-
-    return firstOfYear, lastOfYear
-}
-
 func generateEmojis(count int, emoji string) string {
     result := ""
     for i := 0; i < count; i++ {
         result += emoji
     }
     return result
+}
+
+func getAllDaysOfMonth(mytime time.Time) []string { 
+    year, month, _ := mytime.Date()
+    location := mytime.Location()
+
+    daysInMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, location).Day()
+    var days []string
+
+    for i := 1; i <= daysInMonth; i++ {
+        day := time.Date(year, month, i, 0, 0, 0, 0, location)
+        days = append(days, day.Format("2006-01-02"))
+    }
+    return days
 }

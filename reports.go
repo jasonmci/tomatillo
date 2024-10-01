@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -32,35 +31,6 @@ func getHalfHour(hour int, minute int) int {
         return hour * 2 + 1
     } else {
         return hour * 2
-    }
-}
-
-func generateMonthlyReport(db *sql.DB) {
-    data, err := getMonthlyData(db)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    allDays := getAllDaysOfMonth()
-    dataMap := make(map[string]DayAggregate)
-
-    // Map data to dates
-    for _, dayAggregate := range data {
-        dataMap[dayAggregate.Day] = dayAggregate
-    }
-
-    fmt.Println("Monthly Report")
-    fmt.Println("Day         | Done | Actual         ")
-    fmt.Println("════════════|══════|════════════════")
-
-    for _, day := range allDays {
-        if aggregate, found := dataMap[day]; found {
-            //estimateSprouts := generateEmojis(aggregate.TotalEstimate, "🌱")
-            actualTomatoes := generateEmojis(aggregate.TotalActual, "🍅")
-            fmt.Printf("%-11s | %-4d | %-7s\n", day, aggregate.TotalDone, actualTomatoes)
-        } else {
-            fmt.Printf("%-11s | %-4d | %-7s\n", day, 0, "")
-        }
     }
 }
 
@@ -98,7 +68,8 @@ func generateDailyBlock(date string) {
 
 // Generate a weekly block report
 func generateWeeklyBlockReport() {
-    startOfWeek, endOfWeek := getCurrentWeek()
+    now := time.Now().Local()
+    startOfWeek, endOfWeek := getWeek(now)
     fmt.Println("╔══════════════════════════════════════════╗ ")
     fmt.Printf( "║ Weekly Report (%s to %s) ║ \n", startOfWeek.Format("2006-01-02"), endOfWeek.Format("2006-01-02"))
     fmt.Println("╠══════════════════════════════════════════╩═════════════════════════════════════════╗ ")
@@ -116,7 +87,8 @@ func generateWeeklyBlockReport() {
 
 // Generate a monthly block report
 func generateMonthlyBlockReport() {
-    startOfMonth, endOfMonth := getCurrentMonth()
+    now := time.Now().Local()
+    startOfMonth, endOfMonth := getMonth(now)
     fmt.Println("╔═══════════════════════════════════════════╗ ")
     fmt.Printf( "║ Monthly Report (%s to %s) ║ \n", startOfMonth.Format("2006-01-02"), endOfMonth.Format("2006-01-02"))
     fmt.Println("╠═══════════════════════════════════════════╩════════════════════════════════════════╗ ")
@@ -140,11 +112,13 @@ func generateYearlyCountReport() {
     year := t.Year()
 
     reports, _ := getYearlyData(db, year)
+    currentYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.Local)
+    
     var currentMonth time.Month
-    var lastDay int
-    startOfYear, endOfYear := getCurrentYear()
+    var lastDay int // February is special
+
     fmt.Println("╔═══════════════════════════════════════════╗ ")
-    fmt.Printf( "║ Yearly Report (%s to %s)  ║  \n", startOfYear.Format("2006-01-02"), endOfYear.Format("2006-01-02")) 
+    fmt.Printf( "║ Yearly Report (%s-01-01 to %s-12-31)  ║  \n", currentYear.Format("2006"), currentYear.Format("2006")) 
     fmt.Println("╠═══════════════════════════════════════════╩═══════════════════════════════════════════════════════╗ ")
     fmt.Print("║       01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31║ ")
 

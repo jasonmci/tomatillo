@@ -163,6 +163,23 @@ func TestDeleteTask(t *testing.T) {
     }
 }
 
+func TestGetMonthAbbreviation(t *testing.T) {
+    tests := []struct {
+        month    time.Month
+        expected string
+    }{
+        {time.January, "Jan"},
+        {time.December, "Dec"},
+    }
+
+    for _, tt := range tests {
+        result := getMonthAbbreviation(tt.month)
+        if result != tt.expected {
+            t.Errorf("getMonthAbbreviation(%v) = %q; want %q", tt.month, result, tt.expected)
+        }
+    }
+}
+
 func TestHalfHour(t *testing.T) {
     tests := []struct {
         hour    int
@@ -184,25 +201,11 @@ func TestHalfHour(t *testing.T) {
     }
 }
 
-// Mock version of time.Now() to simulate a specific date
-func mockTimeNow(mockedTime time.Time) func() time.Time {
-    return func() time.Time {
-        return mockedTime
-    }
-}
-
-// Test for getCurrentWeek
-func TestGetCurrentWeek(t *testing.T) {
+func TestGetWeek(t *testing.T) {
     // Mock the current date to be a Wednesday, September 20, 2024
     mockDate := time.Date(2024, time.September, 20, 0, 0, 0, 0, time.Local)
+    sunday, saturday := getWeek(mockDate)
 
-    // Replace time.Now with the mock
-    timeNow := mockTimeNow(mockDate)
-
-    // Call the function to get the week range
-    sunday, saturday := getWeek(timeNow())
-
-    // Expected Sunday and Saturday for the week of September 15–21, 2024
     expectedSunday := time.Date(2024, time.September, 15, 0, 0, 0, 0, time.Local)
     expectedSaturday := time.Date(2024, time.September, 21, 0, 0, 0, 0, time.Local)
 
@@ -212,5 +215,47 @@ func TestGetCurrentWeek(t *testing.T) {
     }
     if !saturday.Equal(expectedSaturday) {
         t.Errorf("expected Saturday to be %v, but got %v", expectedSaturday, saturday)
+    }
+}
+
+func TestGetMonth(t *testing.T) {
+    // Mock the current date to be a Wednesday, September 20, 2024
+    mockDate := time.Date(2024, time.September, 20, 0, 0, 0, 0, time.Local)
+    firstOfMonth, lastOfMonth := getMonth(mockDate)
+
+    expectedFirstOfMonth := time.Date(2024, time.September, 1, 0, 0, 0, 0, time.Local)
+    expectedLastOfMonth := time.Date(2024, time.September, 30, 0, 0, 0, 0, time.Local)
+
+    // Check if the calculated first and last days of the month match the expected values
+    if !firstOfMonth.Equal(expectedFirstOfMonth) {
+        t.Errorf("expected first day of month to be %v, but got %v", expectedFirstOfMonth, firstOfMonth)
+    }
+    if !lastOfMonth.Equal(expectedLastOfMonth) {
+        t.Errorf("expected last day of month to be %v, but got %v", expectedLastOfMonth, lastOfMonth)
+    }
+}
+
+func TestGetCurrentYear(t *testing.T) {
+
+}
+
+func TestGetAllDaysOfMonth(t *testing.T) {
+    // Mock the current date to be a Wednesday, September 20, 2024
+    mockDate := time.Date(2024, time.February, 20, 0, 0, 0, 0, time.Local)
+    days := getAllDaysOfMonth(mockDate)
+
+    expectedDays := []string{
+        "2024-02-01", "2024-02-02", "2024-02-03", "2024-02-04", "2024-02-05", "2024-02-06", "2024-02-07",
+        "2024-02-08", "2024-02-09", "2024-02-10", "2024-02-11", "2024-02-12", "2024-02-13", "2024-02-14",
+        "2024-02-15", "2024-02-16", "2024-02-17", "2024-02-18", "2024-02-19", "2024-02-20", "2024-02-21",
+        "2024-02-22", "2024-02-23", "2024-02-24", "2024-02-25", "2024-02-26", "2024-02-27", "2024-02-28",
+        "2024-02-29",
+    }
+
+    // Check if the calculated days of the month match the expected values
+    for i, day := range days {
+        if day != expectedDays[i] {
+            t.Errorf("expected day %d to be %q, but got %q", i+1, expectedDays[i], day)
+        }
     }
 }

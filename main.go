@@ -231,8 +231,6 @@ func handleReportCommand(args []string) {
 
 	if *reportType == "yearly" {
 		generateYearlyCountReport()
-	} else if *reportType == "monthly" {
-		generateMonthlyReport(db)
 	} else if *reportType == "blockmonth" {
 			generateMonthlyBlockReport()
 	} else if *reportType == "today" {
