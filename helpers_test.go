@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -181,6 +182,35 @@ func TestHalfHour(t *testing.T) {
             t.Errorf("getHalfHour(%d, %d) = %d; want %d", tt.hour, tt.minute, result, tt.expected)
         }
     }
+}
 
+// Mock version of time.Now() to simulate a specific date
+func mockTimeNow(mockedTime time.Time) func() time.Time {
+    return func() time.Time {
+        return mockedTime
+    }
+}
 
+// Test for getCurrentWeek
+func TestGetCurrentWeek(t *testing.T) {
+    // Mock the current date to be a Wednesday, September 20, 2024
+    mockDate := time.Date(2024, time.September, 20, 0, 0, 0, 0, time.Local)
+
+    // Replace time.Now with the mock
+    timeNow := mockTimeNow(mockDate)
+
+    // Call the function to get the week range
+    sunday, saturday := getWeek(timeNow())
+
+    // Expected Sunday and Saturday for the week of September 15–21, 2024
+    expectedSunday := time.Date(2024, time.September, 15, 0, 0, 0, 0, time.Local)
+    expectedSaturday := time.Date(2024, time.September, 21, 0, 0, 0, 0, time.Local)
+
+    // Check if the calculated Sunday and Saturday match the expected values
+    if !sunday.Equal(expectedSunday) {
+        t.Errorf("expected Sunday to be %v, but got %v", expectedSunday, sunday)
+    }
+    if !saturday.Equal(expectedSaturday) {
+        t.Errorf("expected Saturday to be %v, but got %v", expectedSaturday, saturday)
+    }
 }

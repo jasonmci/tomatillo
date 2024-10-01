@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
 )
 
 var db *sql.DB
@@ -42,16 +41,20 @@ func main() {
 		handleDeleteCommand(os.Args[2:])
 	case "activate":
 		handleActivateCommand(os.Args[2:])
+	case "backfill":
+		handleBackfillCommand(os.Args[2:])
 	case "load":
 		handleLoadTasksCommand(db, os.Args[2:])
-	case "simple":
-		handlesimpleReport(db)
+	case "today":
+		// use the handle report command with the --type flag set to today
+		os.Args = append(os.Args, "--type", "today")
+		handleReportCommand(os.Args[2:])
 	case "version":
 		fmt.Println("tomatillo v0.1")
 	case "help":
 		handleHelpCommand()
 	default:
-		fmt.Println("expected 'add', 'activate', 'simple', 'list', 'update', 'done', 'edit', 'delete', 'load', version', or 'report' subcommands")
+		fmt.Println("expected 'add', 'activate', 'today', 'list', 'update', 'done', 'edit', 'delete', 'load', version', or 'report' subcommands")
 		os.Exit(1)
 	}
 }
@@ -67,7 +70,6 @@ func handleHelpCommand() {
 	fmt.Println("  report  Generate a report")
 	fmt.Println("  delete  Delete a task")
 	fmt.Println("  load    Load tasks from a file")
-	fmt.Println("  simple  Generate a simple report")
 	fmt.Println("  version Print the version of the application")
 }
 
@@ -87,55 +89,6 @@ func handleAddCommand(db *sql.DB, args []string) error {
 	addTask(db, *taskName, *taskEstimate)
 	return nil
 }
-
-func handlesimpleReport(db *sql.DB) {
-	query := `
-    SELECT id, name, estimate, actual, created_at, updated_at, done 
-    FROM tasks 
-    WHERE DATE(datetime(created_at, 'localtime')) = DATE('now', 'localtime')
-    ORDER BY created_at;
-    `
-
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()
-
-	var totalEstimate, totalActual, totalTasks, completedTasks int
-
-	fmt.Printf("| %-3s | %-5s | %-54s | %-4s | %-4s |\n", "ID", "Done?", "Task", "Est.", "Act.")
-	fmt.Println("| --- | ----- | ------------------------------------------------------ | ---- | ---- |")
-
-	for rows.Next() {
-		var id, estimate, actual int
-		var name, createdAt, updatedAt string
-		var done bool
-
-		err := rows.Scan(&id, &name, &estimate, &actual, &createdAt, &updatedAt, &done)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		status := "No"
-		if done {
-			status = "Yes"
-			completedTasks++
-		}
-
-		totalEstimate += estimate
-		totalActual += actual
-		totalTasks++
-
-		fmt.Printf("| %-3d | %-5s | %-54s | %-4d | %-4d |\n", id, status, name, estimate, actual)
-	}
-
-	fmt.Println("\n**Summary:**")
-	fmt.Printf("\n- Estimated: %d\n- Actual:    %d\n",
-		totalEstimate, totalActual)
-	fmt.Printf("- Tasks Completed/Total: %d of %d\n", completedTasks, totalTasks)
-}
-
 
 func handleLoadTasksCommand(db *sql.DB, args []string) error {
 	loadTasksFlag := flag.NewFlagSet("load", flag.ExitOnError)
@@ -211,6 +164,20 @@ func handleActivateCommand(args []string) {
 	activateTask(*activateTaskId)
 }
 
+func handleBackfillCommand(args []string) {
+	backfillFlag := flag.NewFlagSet("backfill", flag.ExitOnError)
+	backfillTaskId := backfillFlag.Int("id", 0, "Task ID to backfill")
+	backfillTaskDate := backfillFlag.String("date", "", "Date to backfill the task")
+	backfillTaskHalfHour := backfillFlag.Int("halfhour", 0, "Half hour to backfill the task")
+	backfillFlag.Parse(args)
+
+	if *backfillTaskId <= 0 {
+		log.Println("Please provide a valid task ID.")
+		os.Exit(1)
+	}
+	insertTrackingTask(*backfillTaskId, *backfillTaskDate, *backfillTaskHalfHour)
+}
+
 
 // Helper function to handle the 'update' command
 func handleUpdateCommand(args []string) {
@@ -268,12 +235,12 @@ func handleReportCommand(args []string) {
 		generateMonthlyReport(db)
 	} else if *reportType == "blockmonth" {
 			generateMonthlyBlockReport()
-	} else if *reportType == "daily" {
-		generateDailyReport("2024-09-21")
+	} else if *reportType == "today" {
+		generateTodayReport()
 	}  else if *reportType == "blockweek" {
 		generateWeeklyBlockReport()
 	} else {
-		generateWeeklyBlockReport()
+		generateTodayReport()
 	}
 }
 

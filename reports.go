@@ -64,7 +64,7 @@ func generateMonthlyReport(db *sql.DB) {
     }
 }
 
-func generateDailyReport(date string) {
+func generateDailyBlock(date string) {
     tasks, err := getTasksForDay(date)
     if err != nil {
         fmt.Println("Error fetching tasks:", err)
@@ -108,8 +108,7 @@ func generateWeeklyBlockReport() {
     // Iterate through each day of the week
     for i := 0; i < 7; i++ {
         day := time.Now().Local().AddDate(0, 0, -int(time.Now().Weekday())+i).Format("2006-01-02")
-        //fmt.Printf("\n%s\n", day)
-        generateDailyReport(day)  // Reuse your daily report generation
+        generateDailyBlock(day)  // Reuse your daily report generation
     }
 
     fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
@@ -128,7 +127,7 @@ func generateMonthlyBlockReport() {
     for day := startOfMonth; !day.After(endOfMonth); day = day.AddDate(0, 0, 1) {
         dayStr := day.Format("2006-01-02")
         //fmt.Printf("\n%s\n", day)
-        generateDailyReport(dayStr)  // Reuse your daily report generation
+        generateDailyBlock(dayStr)  // Reuse your daily report generation
     }
 
     fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
@@ -137,12 +136,13 @@ func generateMonthlyBlockReport() {
 // generate a report for yearly data of tasks completed. each row is a month and each column is a day
 func generateYearlyCountReport() {
     
-    reports, _ := getYearlyData(db, 2024)
+    t := time.Now().Local()
+    year := t.Year()
+
+    reports, _ := getYearlyData(db, year)
     var currentMonth time.Month
     var lastDay int
     startOfYear, endOfYear := getCurrentYear()
-    fmt.Println("start of year", startOfYear)
-    fmt.Println("end of year", endOfYear)
     fmt.Println("╔═══════════════════════════════════════════╗ ")
     fmt.Printf( "║ Yearly Report (%s to %s)  ║  \n", startOfYear.Format("2006-01-02"), endOfYear.Format("2006-01-02")) 
     fmt.Println("╠═══════════════════════════════════════════╩═══════════════════════════════════════════════════════╗ ")
@@ -194,6 +194,35 @@ func generateTaskReport(tasks []Task) {
         fmt.Println(strings.Repeat("═", 80))
     }
 }
+
+func generateTodayReport() {
+    tasks, err := getDailyTasks(db)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("╔════════════════════════════════════════════════════════════════════════════════════╗ ")
+	fmt.Printf( "║ %-3s   %-5s   %-54s   %-4s   %-4s ║\n", "ID", "Done?", "Task", "Est.", "Act.")
+	fmt.Println("╠════════════════════════════════════════════════════════════════════════════════════╣ ")
+
+    for _, task := range tasks {
+        id := task.ID
+        name := task.Name
+        estimate := task.Estimate
+        actual := task.Actual
+        done := task.Done
+        completedTasks := 0
+
+        status := "No"
+        if done {
+            status = "Yes"
+            completedTasks++
+        } 
+        fmt.Printf("║ %-3d   %-5s   %-54s   %-4d   %-4d ║\n", id, status, name, estimate, actual)
+    }
+    fmt.Println("╚════════════════════════════════════════════════════════════════════════════════════╝ ")
+}
+
 
 func listTasks(days int, status string) {
     tasks, err := getTasks(days, status)

@@ -1,3 +1,4 @@
 *.db
 *.txt
 *.out
+test/manualcheck.sql

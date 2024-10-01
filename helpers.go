@@ -6,14 +6,16 @@ import (
 
 // Get start and end dates for the current week (Monday to Sunday)
 func getCurrentWeek() (time.Time, time.Time) {
-    // Get the current date
     now := time.Now().Local()
-    // Find the Monday of the current week
-    sunday := now.AddDate(0, 0, -int(now.Weekday()))
-    // Get the Sunday of the current week
-    saturday := sunday.AddDate(0, 0, 6)
+    
+    sunday, saturday := getWeek(now)
+    return sunday, saturday
+}
 
-    // Format as YYYY-MM-DD
+func getWeek(mytime time.Time) (time.Time, time.Time) {
+    
+    sunday := mytime.AddDate(0, 0, -int(mytime.Weekday()))
+    saturday := sunday.AddDate(0, 0, 6)
     return sunday, saturday
 }
 

@@ -72,7 +72,7 @@ func initializeDatabase() *sql.DB {
         date DATE NOT NULL,
         half_hour INTEGER NOT NULL CHECK (half_hour BETWEEN 0 AND 47),
         task_name TEXT,
-        status TEXT DEFAULT 'in progress',
+        status TEXT DEFAULT 'active',
         FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
         UNIQUE(task_id, date, half_hour)
     );`
@@ -83,6 +83,37 @@ func initializeDatabase() *sql.DB {
     }
 
     return db
+}
+
+func getDailyTasks(db *sql.DB) ([]Task, error){
+	query := `
+    SELECT id, name, estimate, actual, created_at, updated_at, done 
+    FROM tasks 
+    WHERE DATE(datetime(created_at, 'localtime')) = DATE('now', 'localtime')
+    ORDER BY created_at;
+    `
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+    var tasks []Task
+    for rows.Next() {
+        var id, estimate, actual int
+        var name string
+        var createdAt, updatedAt time.Time
+        var done bool
+
+        err := rows.Scan(&id, &name, &estimate, &actual, &createdAt, &updatedAt, &done)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        tasks = append(tasks, Task{ ID: id, Name: name, Estimate: estimate, Actual: actual, CreatedAt: createdAt, UpdatedAt: updatedAt, Done: done })
+    }
+    return tasks, nil
 }
 
 func getMonthlyData(db *sql.DB) ([]DayAggregate, error) {
@@ -132,18 +163,6 @@ func getAllDaysOfMonth() []string {
 
     return days
 }
-
-// func getAllDaysOfWeek() []string {
-//     var days []string
-//     now := time.Now()
-
-//     for i := 0; i < 7; i++ {
-//         day := now.AddDate(0, 0, -int(now.Weekday())+i)
-//         days = append(days, day.Format("2006-01-02"))
-//     }
-
-//     return days
-// }
 
 func getYearlyData(db *sql.DB, year int) ([]TaskTrackingAggregate, error) {
     // aggregate half_hours completed for each day for the year
@@ -293,17 +312,19 @@ func addTask(db *sql.DB, name string, estimate int) error {
 func activateTask(id int) {
     // get current date in yyyy-mm-dd format
     // insert into task_tracking table
-
     currentDate := time.Now().Format("2006-01-02")
     half_hour := getHalfHour(time.Now().Hour(), time.Now().Minute())
+    insertTrackingTask(id, currentDate, half_hour)
+}
 
+func insertTrackingTask(id int, currentDate string, halfHour int) {
     query := `
     INSERT INTO task_tracking (task_id, date, half_hour, status) 
     VALUES (?, ?, ?, 'active')
     ON CONFLICT(task_id, date, half_hour)
     DO UPDATE SET status = 'done';
     `
-    _, err := db.Exec(query, id, currentDate, half_hour)
+    _, err := db.Exec(query, id, currentDate, halfHour)
     if err != nil {
         log.Fatal(err)
     }
@@ -316,7 +337,6 @@ func updateActual(id int) {
     if err != nil {
         log.Fatal(err)
     }
-
       
     rowsAffected, err := result.RowsAffected()
     if err != nil {
