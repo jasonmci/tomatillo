@@ -261,19 +261,6 @@ func addTask(db *sql.DB, name string, estimate int) error {
     return nil
 }
 
-func activateTask(id int) error {
-    // get current date in yyyy-mm-dd format
-    // insert into task_tracking table
-    currentDate := time.Now().Format("2006-01-02")
-    half_hour := getHalfHour(time.Now().Hour(), time.Now().Minute())
-    err := insertTrackingTask(id, currentDate, half_hour)
-    if err != nil {
-        return fmt.Errorf("failed to activate task: %v", err)
-    }
-
-    return nil
-}
-
 func insertTrackingTask(id int, currentDate string, halfHour int) error {
     query := `
     INSERT INTO task_tracking (task_id, date, half_hour, status) 
@@ -289,17 +276,17 @@ func insertTrackingTask(id int, currentDate string, halfHour int) error {
     return nil
 }
 
-func updateActual(id int) {
+func updateActual(id int) error {
 
     query := `UPDATE tasks SET actual = actual + 1, updated_at = datetime('now', 'localtime') WHERE id = ?`
     result, err := db.Exec(query, id)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to execute update query: %w", err)
     }
       
     rowsAffected, err := result.RowsAffected()
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to retrieve rows affected: %w", err)
     }
 
     if rowsAffected == 0 {
@@ -307,18 +294,20 @@ func updateActual(id int) {
     } else {
         fmt.Printf("Updated task with ID: %d, increased 'actual' count by 1\n", id)
     }
+
+    return nil
 }
 
-func updateEstimate(id int, newEstimate int) {
+func updateEstimate(id int, newEstimate int) error {
     query := `UPDATE tasks SET estimate = ?, updated_at = datetime('now', 'localtime') WHERE id = ?`
     result, err := db.Exec(query, newEstimate, id)
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to execute update query: %w", err)
     }
 
     rowsAffected, err := result.RowsAffected()
     if err != nil {
-        log.Fatal(err)
+        return fmt.Errorf("failed to retrieve rows affected: %w", err)
     }
 
     if rowsAffected == 0 {
@@ -326,6 +315,8 @@ func updateEstimate(id int, newEstimate int) {
     } else {
         fmt.Printf("Task with ID: %d has been updated with new estimate: %d 🌱\n", id, newEstimate)
     }
+
+    return nil
 }
 
 func markAsDone(id int) error {

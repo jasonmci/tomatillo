@@ -35,17 +35,3 @@ func generateEmojis(count int, emoji string) string {
     }
     return result
 }
-
-func getAllDaysOfMonth(mytime time.Time) []string { 
-    year, month, _ := mytime.Date()
-    location := mytime.Location()
-
-    daysInMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, location).Day()
-    var days []string
-
-    for i := 1; i <= daysInMonth; i++ {
-        day := time.Date(year, month, i, 0, 0, 0, 0, location)
-        days = append(days, day.Format("2006-01-02"))
-    }
-    return days
-}

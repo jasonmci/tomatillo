@@ -77,30 +77,6 @@ func taskExists(t *testing.T, taskID int, date string, halfHour int, status stri
     return count > 0
 }
 
-func TestActivateTask(t *testing.T) {
-    setupTestDB2(t) // Initialize the test database
-
-    db = testDB
-
-    mockDate := time.Now().Format("2006-01-02")
-    mockHalfHour := getHalfHour(time.Now().Hour(), time.Now().Minute())
-
-    fmt.Println(mockDate)
-    fmt.Println(mockHalfHour)
-
-    insertTrackingTask(1, mockDate, mockHalfHour)
-
-    if !taskExists(t, 1, mockDate, mockHalfHour, "active") {
-        t.Errorf("expected task to be 'active', but it wasn't found")
-    }
-
-    insertTrackingTask(1, mockDate, mockHalfHour)
-
-    if !taskExists(t, 1, mockDate, mockHalfHour, "done") {
-        t.Errorf("expected task to be updated to 'done', but it wasn't")
-    }
-}
-
 func TestInsertTrackingTask(t *testing.T) {
     setupTestDB2(t) // Initialize the test database
 
@@ -125,7 +101,6 @@ func TestInsertTrackingTask(t *testing.T) {
 // add test for getDailyTasks
 func TestGetDailyTasks(t *testing.T) {
     setupTestDB2(t) // Initialize the test database
-
     db = testDB
 
     err := addTask(db, "Task 1", 1)
@@ -226,5 +201,110 @@ func TestGetTasks(t *testing.T) {
     if err == nil {
         t.Error("expected error for invalid status, but got none")
     }
+
+}
+
+func TestUpdateEstimate(t *testing.T) {
+    setupTestDB2(t) // Initialize the test database
+    db = testDB
+
+    insertTestTask(db, "Task 1", 5, 2, false) // WIP task
+
+    err := updateEstimate(1, 7)
+    if err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+
+    // Verify the updated estimate
+    var estimate int
+    query := `SELECT estimate FROM tasks WHERE id = ?`
+    err = db.QueryRow(query, 1).Scan(&estimate)
+    if err != nil {
+        t.Fatalf("failed to query task: %v", err)
+    }
+
+    if estimate != 7 {
+        t.Errorf("expected estimate to be 7, got %d", estimate)
+    }
+}
+
+func TestUpdateActual(t *testing.T) {
+    setupTestDB2(t) // Initialize the test database
+    db = testDB
+
+    insertTestTask(db, "Task 1", 5, 2, false) // WIP task
+
+    err := updateActual(1)
+    if err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+
+    // Verify the updated actual
+    var actual int
+    query := `SELECT actual FROM tasks WHERE id = ?`
+    err = db.QueryRow(query, 1).Scan(&actual)
+    if err != nil {
+        t.Fatalf("failed to query task: %v", err)
+    }
+
+    if actual != 3 {
+        t.Errorf("expected actual to be 3, got %d", actual)
+    }
+}
+
+func TestGetTasksForDay(t *testing.T) {
+    setupTestDB2(t)
+    db = testDB
+
+    // Add some tasks to the task_tracking table
+    insertTrackingTask(1, "2021-07-01", 1)
+    insertTrackingTask(1, "2021-07-01", 2) 
+    insertTrackingTask(1, "2021-07-01", 2) // Duplicate entry
+    insertTrackingTask(2, "2021-07-01", 1)
+    insertTrackingTask(2, "2021-07-01", 2)
+    insertTrackingTask(2, "2021-07-01", 3)
+
+    tasks, err := getTasksForDay("2021-07-01")
+    if err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+
+    if len(tasks) != 5 {
+        t.Errorf("expected 5 tasks, got %d", len(tasks))
+    }
+}
+
+func TestGetYearlyData(t *testing.T) {
+    setupTestDB2(t)
+    db = testDB
+
+    // Add some tasks to the task_tracking table
+    insertTrackingTask(1, "2021-01-01", 1)
+    insertTrackingTask(1, "2021-01-01", 2) 
+    insertTrackingTask(1, "2021-01-01", 2) // Duplicate entry
+    insertTrackingTask(2, "2021-01-01", 1)
+    insertTrackingTask(2, "2021-01-01", 2)
+    insertTrackingTask(2, "2021-01-01", 3)
+    insertTrackingTask(3, "2021-02-01", 1)
+
+    data, err := getYearlyData(db, 2021)
+    if err != nil {
+        t.Fatalf("unexpected error: %v", err)
+    }
+
+    if len(data) != 365 {
+        t.Errorf("expected 2 tasks, got %d", len(data))
+    }
+
+    // test feb 1 has one task
+    if data[31].TaskCount != 1 {
+        t.Errorf("expected 1 task, got %d", data[31].TaskCount)
+    }
+
+    // test jan 1 has 3 tasks
+    if data[0].TaskCount != 5 {
+        t.Errorf("expected 5 tasks, got %d", data[0].TaskCount)
+    }
+
 
 }

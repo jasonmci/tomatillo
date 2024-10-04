@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var db *sql.DB
@@ -161,7 +162,11 @@ func handleActivateCommand(args []string) {
 		log.Println("Please provide a valid task ID.")
 		os.Exit(1)
 	}
-	activateTask(*activateTaskId)
+
+	// insert into task_tracking table
+	currentDate := time.Now().Format("2006-01-02")
+	half_hour := getHalfHour(time.Now().Hour(), time.Now().Minute())
+	insertTrackingTask(*activateTaskId, currentDate, half_hour)
 }
 
 func handleBackfillCommand(args []string) {

@@ -235,27 +235,3 @@ func TestGetMonth(t *testing.T) {
     }
 }
 
-func TestGetCurrentYear(t *testing.T) {
-
-}
-
-func TestGetAllDaysOfMonth(t *testing.T) {
-    // Mock the current date to be a Wednesday, September 20, 2024
-    mockDate := time.Date(2024, time.February, 20, 0, 0, 0, 0, time.Local)
-    days := getAllDaysOfMonth(mockDate)
-
-    expectedDays := []string{
-        "2024-02-01", "2024-02-02", "2024-02-03", "2024-02-04", "2024-02-05", "2024-02-06", "2024-02-07",
-        "2024-02-08", "2024-02-09", "2024-02-10", "2024-02-11", "2024-02-12", "2024-02-13", "2024-02-14",
-        "2024-02-15", "2024-02-16", "2024-02-17", "2024-02-18", "2024-02-19", "2024-02-20", "2024-02-21",
-        "2024-02-22", "2024-02-23", "2024-02-24", "2024-02-25", "2024-02-26", "2024-02-27", "2024-02-28",
-        "2024-02-29",
-    }
-
-    // Check if the calculated days of the month match the expected values
-    for i, day := range days {
-        if day != expectedDays[i] {
-            t.Errorf("expected day %d to be %q, but got %q", i+1, expectedDays[i], day)
-        }
-    }
-}
