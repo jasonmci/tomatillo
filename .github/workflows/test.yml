@@ -33,11 +33,26 @@ jobs:
       - name: Install dependencies
         run: go mod tidy && go mod download
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Run tests
         run: |
           start_time=$(date +%s)
-          go test -v ./...
+          gotestsum --format testdox -- -coverprofile=coverage.txt
           end_time=$(date +%s)
           echo "end_time=$end_time" >> $GITHUB_ENV
           echo "build_duration=$((end_time - start_time))"
           echo "build_duration=$((end_time - start_time))" >> $GITHUB_ENV
+
+      - name: View coverage summary
+        run: go tool cover -func=coverage.txt
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.out
+          flags: unittests
+          name: codecov-coverage
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
