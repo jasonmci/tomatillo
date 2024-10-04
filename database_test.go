@@ -3,8 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"time"
+	"log"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
@@ -50,6 +51,36 @@ func setupTestDB2(t *testing.T) {
     if err != nil {
         t.Fatalf("failed to create task_tracking table: %v", err)
     }
+}
+
+// TestInitializeDatabase verifies that the database is initialized correctly
+func TestInitializeDatabase(t *testing.T) {
+    db := initializeDatabase(":memory:")
+    defer db.Close()
+
+    // Check if 'tasks' table exists
+    if !tableExists(db, "tasks") {
+        t.Error("expected 'tasks' table to be created, but it does not exist")
+    }
+
+    // Check if 'task_tracking' table exists
+    if !tableExists(db, "task_tracking") {
+        t.Error("expected 'task_tracking' table to be created, but it does not exist")
+    }
+}
+
+// Helper function to check if a table exists
+func tableExists(db *sql.DB, tableName string) bool {
+    query := `SELECT name FROM sqlite_master WHERE type='table' AND name=?;`
+    var name string
+    err := db.QueryRow(query, tableName).Scan(&name)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return false
+        }
+        log.Fatalf("failed to check table existence: %v", err)
+    }
+    return name == tableName
 }
 
 // Helper function to insert test data

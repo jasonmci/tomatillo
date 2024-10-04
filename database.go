@@ -43,8 +43,8 @@ type Task struct {
     Status    string
 }
 
-func initializeDatabase() *sql.DB {
-    db, err := sql.Open("sqlite3", "./tomatillo.db")
+func initializeDatabase(dbPath string) *sql.DB {
+    db, err := sql.Open("sqlite3", dbPath)
     if err != nil {
         log.Fatal(err)
     }

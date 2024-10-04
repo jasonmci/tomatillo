@@ -15,7 +15,7 @@ import (
 var db *sql.DB
 
 func main() {
-	db = initializeDatabase()
+	db = initializeDatabase("./tomatillo.db")
 	defer db.Close()
 
 	if len(os.Args) < 2 {
